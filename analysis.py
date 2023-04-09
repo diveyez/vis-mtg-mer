@@ -42,11 +42,11 @@ def make_plots(df, user_list, cons_types, mod_types, path):
             c_i = c_lev * std / np.sqrt(cnt)
             # texts
             mod_sht = mod.split('_')[-1]
-            lbl = '{}_{}'.format(mod_sht, cons)
+            lbl = f'{mod_sht}_{cons}'
             plt.plot(mean.transpose(), label=cons)
 
             plt.fill_between(mean.index, mean.transpose() + c_i, mean.transpose() - c_i, alpha=0.2)
-            plt.title('Model: {}'.format(mod_sht.upper()))
+            plt.title(f'Model: {mod_sht.upper()}')
             plt.ylabel('F1 score')
             plt.xlabel('Epochs')
             plt.legend()
@@ -73,14 +73,14 @@ def get_stats(df, user_list, cons_types, mod_types, path):
         t_test[mod] = {}
         # print('Model {}'.format(mod))
         for cons_a, cons_b in cons_comb:
-            txt_cons = '{} vs {}'.format(cons_a, cons_b)
+            txt_cons = f'{cons_a} vs {cons_b}'
             t_test[mod][txt_cons] = {}
             for it in data_cols:
                 data_a = df[(df.model == mod) & (df.consensus == cons_a)]
                 data_b = df[(df.model == mod) & (df.consensus == cons_b)]
                 tval, pval = stats.ttest_ind(data_a.loc[:, it], data_b.loc[:, it], alternative='greater')
                 t_test[mod][txt_cons][it] = {}
-                
+
                 stat_sig = False
                 if pval < 0.05:
                     stat_sig = True
@@ -170,18 +170,24 @@ def analyze_users(slope_df, anno, users, scores_df):
 
     # calculate agreement
     alpha_quad, alpha_aro, alpha_val, alpha_emo = get_info_per_song(anno_hi)
-    print('Agreement for high personalization:\nQuadrant: {}\nArousal: {}\nValence: {}\nEmotion: {}\n'.format(alpha_quad, alpha_aro, alpha_val, alpha_emo))
+    print(
+        f'Agreement for high personalization:\nQuadrant: {alpha_quad}\nArousal: {alpha_aro}\nValence: {alpha_val}\nEmotion: {alpha_emo}\n'
+    )
     alpha_quad, alpha_aro, alpha_val, alpha_emo = get_info_per_song(anno_med)
-    print('Agreement for medium personalization:\nQuadrant: {}\nArousal: {}\nValence: {}\nEmotion: {}\n'.format(alpha_quad, alpha_aro, alpha_val, alpha_emo))
+    print(
+        f'Agreement for medium personalization:\nQuadrant: {alpha_quad}\nArousal: {alpha_aro}\nValence: {alpha_val}\nEmotion: {alpha_emo}\n'
+    )
     alpha_quad, alpha_aro, alpha_val, alpha_emo = get_info_per_song(anno_lo)
-    print('Agreement for low personalization:\nQuadrant: {}\nArousal: {}\nValence: {}\nEmotion: {}\n'.format(alpha_quad, alpha_aro, alpha_val, alpha_emo))
+    print(
+        f'Agreement for low personalization:\nQuadrant: {alpha_quad}\nArousal: {alpha_aro}\nValence: {alpha_val}\nEmotion: {alpha_emo}\n'
+    )
     pdb.set_trace()
     return hi_users, med_users, lo_users
 
 
 def anova_tests(df, hi_users, med_users, lo_users):
     # organize data for analysis
-    col_name = {str(_): 'epoch_{}'.format(_) for _ in range(15)}
+    col_name = {str(_): f'epoch_{_}' for _ in range(15)}
     df.rename(columns=col_name, inplace=True)
 
     df['type'] = ''

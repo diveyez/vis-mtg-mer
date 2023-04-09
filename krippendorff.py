@@ -82,8 +82,9 @@ def _random_coincidences(value_domain, n, n_v):
         Random coincidence matrix.
     """
     n_v_column = n_v.reshape(-1, 1)
-    e = (n_v_column.dot(n_v_column.T) - np.eye(len(value_domain)) * n_v_column) / (n - 1)
-    return e
+    return (
+        n_v_column.dot(n_v_column.T) - np.eye(len(value_domain)) * n_v_column
+    ) / (n - 1)
 
 
 def _distances(value_domain, distance_metric, n_v):
@@ -148,7 +149,12 @@ def _reliability_data_to_value_counts(reliability_data, value_domain):
         Number of coders that assigned a certain value to a determined unit, where N is the number of units
         and V is the value count.
     """
-    return np.array([[sum(1 for rate in unit if rate == v) for v in value_domain] for unit in reliability_data.T])
+    return np.array(
+        [
+            [sum(rate == v for rate in unit) for v in value_domain]
+            for unit in reliability_data.T
+        ]
+    )
 
 
 def alpha(reliability_data=None, value_counts=None, value_domain=None, level_of_measurement='interval',
@@ -229,12 +235,11 @@ def alpha(reliability_data=None, value_counts=None, value_domain=None, level_of_
         value_domain = value_domain or np.unique(reliability_data[~np.isnan(reliability_data)])
 
         value_counts = _reliability_data_to_value_counts(reliability_data, value_domain)
-    else:  # elif reliability_data is None
-        if value_domain:
-            assert value_counts.shape[1] == len(value_domain), \
-                "The value domain should be equal to the number of columns of value_counts."
-        else:
-            value_domain = tuple(range(value_counts.shape[1]))
+    elif value_domain:
+        assert value_counts.shape[1] == len(value_domain), \
+            "The value domain should be equal to the number of columns of value_counts."
+    else:
+        value_domain = tuple(range(value_counts.shape[1]))
 
 
     distance_metric = _distance_metric(level_of_measurement)
@@ -249,14 +254,4 @@ def alpha(reliability_data=None, value_counts=None, value_domain=None, level_of_
     Do = np.sum(np.triu(o, 1) * np.triu(dist, 1))
     De = np.sum(np.tril(e, -1) * np.tril(dist, -1))
 
-    if Do == 0 and De == 0:
-        # accounting for insufficient variation: 1 - 0/0 = 0 or -inf
-        # Taken from Krippendorff (2004) Content Analysis, page 236
-        alpha = 0
-        # print('Insufficient variation!')
-        # pdb.set_trace()
-    else:
-        # alpha = 1 - np.sum(o * dist) / np.sum(e * dist)
-        alpha = 1 - (Do / De)
-
-    return alpha
+    return 0 if Do == 0 and De == 0 else 1 - (Do / De)

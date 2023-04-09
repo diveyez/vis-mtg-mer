@@ -110,9 +110,11 @@ class Plotter():
 
     def make_song_info(self, idx, df):
         df_subset = df.iloc[idx]
-        spoti_link_emb = 'https://open.spotify.com/embed/track/{}'.format(df.loc[idx, 'track_id'])
-        spoti_link = 'https://open.spotify.com/track/{}'.format(df.loc[idx, 'track_id'])
-        muziek_link = 'https://www.muziekweb.nl/Embed/{}?theme=static&color=dark'.format(df.loc[idx, 'cdr_track_num'])
+        spoti_link_emb = (
+            f"https://open.spotify.com/embed/track/{df.loc[idx, 'track_id']}"
+        )
+        spoti_link = f"https://open.spotify.com/track/{df.loc[idx, 'track_id']}"
+        muziek_link = f"https://www.muziekweb.nl/Embed/{df.loc[idx, 'cdr_track_num']}?theme=static&color=dark"
 
         # figure quads
         fig_quads = go.Figure()
@@ -138,284 +140,454 @@ class Plotter():
         fig_cld.update_xaxes(visible=False)
         fig_cld.update_yaxes(visible=False)
 
-        layout = html.Div([
-            html.Embed(src=muziek_link, height=60, width=260, style={'marginRight': 50, 'marginLeft': 50}),
-
-            html.Embed(src=spoti_link_emb, height=80, width=300, style={'marginRight': 50, 'marginLeft': 50}),
-            # html.H6('Summary:'),
-            html.P('Summary: {0:.0f} annotators - preference ({1:.0f}%) - familiarity ({2:.0f}%) - tempo ({3:.1f} BPM)'.format(df.iloc[idx].num_users, 
-                                                                                                                      float(df.iloc[idx].pref) * 100,
-                                                                                                                      float(df.iloc[idx].fam) * 100, 
-                                                                                                                      df.iloc[idx].tempo),
-                   style={'text-align': 'center'}),
-            html.Div(children=[            
-
-            html.Div(children=[
-                dcc.Graph(figure=fig_quads,  style={'height': '35vh'}),
-            ], className='four columns'),
-
-            html.Div(children=[
-                dcc.Graph(figure=fig_moods,  style={'height': '35vh'}),
-            ], className='eight columns'),
-            ], className='twelve columns'),
-
-            html.Div(children=[
-                dcc.Graph(figure=fig_cld, style={'height': '30vh'}),
-            ], className='twelve columns'),
-            # 
-        ], className='twelve columns')
-
-        return layout
+        return html.Div(
+            [
+                html.Embed(
+                    src=muziek_link,
+                    height=60,
+                    width=260,
+                    style={'marginRight': 50, 'marginLeft': 50},
+                ),
+                html.Embed(
+                    src=spoti_link_emb,
+                    height=80,
+                    width=300,
+                    style={'marginRight': 50, 'marginLeft': 50},
+                ),
+                # html.H6('Summary:'),
+                html.P(
+                    'Summary: {0:.0f} annotators - preference ({1:.0f}%) - familiarity ({2:.0f}%) - tempo ({3:.1f} BPM)'.format(
+                        df.iloc[idx].num_users,
+                        float(df.iloc[idx].pref) * 100,
+                        float(df.iloc[idx].fam) * 100,
+                        df.iloc[idx].tempo,
+                    ),
+                    style={'text-align': 'center'},
+                ),
+                html.Div(
+                    children=[
+                        html.Div(
+                            children=[
+                                dcc.Graph(
+                                    figure=fig_quads, style={'height': '35vh'}
+                                ),
+                            ],
+                            className='four columns',
+                        ),
+                        html.Div(
+                            children=[
+                                dcc.Graph(
+                                    figure=fig_moods, style={'height': '35vh'}
+                                ),
+                            ],
+                            className='eight columns',
+                        ),
+                    ],
+                    className='twelve columns',
+                ),
+                html.Div(
+                    children=[
+                        dcc.Graph(figure=fig_cld, style={'height': '30vh'}),
+                    ],
+                    className='twelve columns',
+                ),
+                #
+            ],
+            className='twelve columns',
+        )
 
 
     def create_layout(self, app):
         with open('intro_txt.md', 'r') as file:
             intro_txt = file.read()
-        layout = html.Div(style={'background-color':'#ffffff'}, children=[
-            # header
-            html.Div(className="row header",
-                style={"background-color": "#f9f9f9",
-                       "margin": "5px 5px 5px 5px"},
-                children=[
-                html.A(                
-                    html.Img(src=app.get_asset_url('mtg.png'), alt='mtg_logo', height=70),
-                    href='https://www.upf.edu/web/mtg/',
-                    target='_blank',
-                    className='three columns'),
-
-                html.H3('TROMPA-MER: an open data set for personalized Music Emotion Recognition',
-                        style={'text-align': 'right'},
-                        className='nine columns'),
-                ]),
-
-
-            # text and graph
-            html.Section(className='row', style={'padding':'0px'}, children=[
-                html.Div(children=[
-                    dcc.Markdown(intro_txt),
-
-                html.Div(className='row', children=[
-
-                    html.Div(children=[
-                        dcc.Graph(id='graph-arousal-valence',  style={'height': '68vh'}),
-                    ], className='eight columns'), 
-
-
-                html.Div(children=[
-
-                    html.Div(children=['Select AV representation:',
-                            dcc.Dropdown(
-                                style={"margin": "0px 5px 5px 0px"},
-                                id='dropdown-arousalvalence',
-                                placeholder='Select AV representation:',
-                                searchable=False,
-                                clearable=False,
-                                options=[
-                                    {'label': 'Spotify API', 'value':'spoti_api'},
-                                    {'label': 'Spotify  API + Standarization', 'value':'norm'},
-                                ],
-                                value='spoti_api',
-                            ),
-                        ],
-                    ),
-
-                    html.Div(children=['Colorize using features:',
-                            dcc.Dropdown(
-                                style={"margin": "0px 5px 5px 0px"},
-                                id='dropdown-color',
-                                placeholder='Colorize using Spotify API:',
-                                searchable=False,
-                                clearable=False,
-                                options=[
-                                    {'label': 'None', 'value':'none'},
-                                    {'label': 'Danceability', 'value':'danceability'},
-                                    {'label': 'Popularity', 'value':'popularity'},
-                                    {'label': 'Tempo', 'value':'tempo'},
-                                    {'label': 'Loudness', 'value':'loudness'},
-                                    {'label': 'Acousticness', 'value':'acousticness'},
-                                    {'label': 'Speechiness', 'value':'speechiness'},
-                                    {'label': 'Liveness', 'value':'liveness'},
-                                ],
-                                value='none',
-                            ),
-                        ],
-                    ),
-
-                    html.Div(children=['Select filters:',
-                            dcc.Dropdown(
-                                style={"margin": "0px 5px 5px 0px"},
-                                id='dropdown-filters',
-                                placeholder='Select filters:',
-                                searchable=False,
-                                clearable=False,
-                                options=[
-                                    {'label': 'None', 'value':'none'},
-                                    {'label': 'Positive Preference', 'value':'pos_pref'},
-                                    {'label': 'Negative Preference', 'value':'neg_pref'},
-                                    {'label': 'Positive Familiarity', 'value':'pos_fam'},
-                                    {'label': 'Negative Familiarity', 'value':'neg_fam'},
-                                    {'label': 'Danceability (>0.35)', 'value':'pos_dan'},
-                                    {'label': 'Danceability (<0.35)', 'value':'neg_dan'},
-                                    {'label': 'Acousticness (>0.98)', 'value':'pos_aco'},
-                                    {'label': 'Acousticness (<0.98)', 'value':'neg_aco'},
-                                    {'label': 'Popularity (>0.1)', 'value':'pos_pop'},
-                                    {'label': 'Popularity (<0.1)', 'value':'neg_pop'},
-                                ],
-                                value='none',
-                            ),
-                        ],
-                    ),
-
-                    html.Div(
-                        style={"margin": "0px 5px 5px 0px"},
-                        children=["Mode",
-                            dcc.Slider(
-                                id="slider-mode",
-                                min=-1,
-                                max=1,
-                                step=None,
-                                value=-1,
-                                marks={-1: 'All',
-                                       0: 'Minor',
-                                       1: 'Major'},
-                                vertical=False,
-                            ),
-                        ],
-                    ),
-                    html.Div(
-                        style={"margin": "0px 5px 5px 0px"},
-                        children=["Tempo",  
-                            dcc.RangeSlider(
-                                id="slider-tempo",
-                                min=0,
-                                max=220,
-                                step=1,
-                                value=[0, 220],
-                                tooltip={"placement": "bottom", "always_visible": True},
-                                allowCross=False,
-                            ),
-                        ],
-                    ),
-
-                    html.Div(
-                        style={"margin": "0px 5px 5px 0px"},
-                        children=["Key",  
-                            dcc.Slider(
-                                id="slider-key",
-                                min=0,
-                                max=15,
-                                step=None,
-                                value=15,
-                                marks={0: 'C',
-                                       1: 'C#',
-                                       2: 'D',
-                                       3: 'D#',
-                                       4: 'E',
-                                       5: 'F',
-                                       6: 'F#',
-                                       7: 'G',
-                                       8: 'G#',
-                                       9: 'A',
-                                       10: 'A#',
-                                       11: 'B',
-                                       15: 'All'},
-
-                                vertical=False,
-                            ),
-                        ],
-                    ),
-
-                    html.Div(
-                        style={"margin": "0px 5px 5px 0px"},
-                        children=["Num. Annotators",  
-                            dcc.RangeSlider(
-                                id="slider-users",
-                                min=0,
-                                max=np.max(self.data.num_users),
-                                step=1,
-                                value=[0, np.max(self.data.num_users)],
-                                tooltip={"placement": "bottom", "always_visible": True},
-                                vertical=False,
-                            ),
-                        ],
-                    ),
-
-                    html.Div(id='agreement-text',
-                             children=[]),
-
-                ], className='four columns'),
-                ]),
-                    
-            ], className='six columns',
-            ),
-
-            # annotation info
-            html.Div(
-                [
-                    html.Table(
-                        id="table-element",
-                        className="table__container",
-                    )
-                ],
-                id="click-information",
-                className='six columns',
-            ),
-            ]),
-            
-            # footer
-            html.Div(className="row footer",
-                style={"background-color": "#f9f9f9"},
-                children=[
-
-                html.P('Created by Juan Sebastián Gómez-Cañón',
-                        style={'text-align': 'center',
-                               'color': 'grey',
-                               'font-size': '10px'},),
+        return html.Div(
+            style={'background-color': '#ffffff'},
+            children=[
+                # header
                 html.Div(
+                    className="row header",
+                    style={
+                        "background-color": "#f9f9f9",
+                        "margin": "5px 5px 5px 5px",
+                    },
                     children=[
-                    html.A(                
-                        html.Img(src=app.get_asset_url('juan_gomez.png'), alt='juan_logo', height=25),
-                        href='https://juansgomez87.github.io/',
-                        target='_blank',
-                        style={"margin": "0px 15px 0px 15px"}),
-                     html.A(                
-                        html.Img(src=app.get_asset_url('twitter.png'), alt='twitter', height=25),
-                        href='https://twitter.com/juan_s_gomez',
-                        target='_blank',
-                        style={"margin": "0px 15px 0px 15px"}),
-                    html.A(                
-                        html.Img(src=app.get_asset_url('github.png'), alt='github', height=25),
-                        href='https://github.com/juansgomez87',
-                        target='_blank',
-                        style={"margin": "0px 15px 0px 15px"}),               
-                    html.A(                
-                        html.Img(src=app.get_asset_url('scholar.png'), alt='scholar', height=25),
-                        href='https://scholar.google.com/citations?user=IvIQqUwAAAAJ&hl=en',
-                        target='_blank',
-                        style={"margin": "0px 15px 0px 15px"}),               
+                        html.A(
+                            html.Img(
+                                src=app.get_asset_url('mtg.png'),
+                                alt='mtg_logo',
+                                height=70,
+                            ),
+                            href='https://www.upf.edu/web/mtg/',
+                            target='_blank',
+                            className='three columns',
+                        ),
+                        html.H3(
+                            'TROMPA-MER: an open data set for personalized Music Emotion Recognition',
+                            style={'text-align': 'right'},
+                            className='nine columns',
+                        ),
                     ],
-                    style={'text-align': 'center'},),
-                ]),
-
-        ])
-        return layout
+                ),
+                # text and graph
+                html.Section(
+                    className='row',
+                    style={'padding': '0px'},
+                    children=[
+                        html.Div(
+                            children=[
+                                dcc.Markdown(intro_txt),
+                                html.Div(
+                                    className='row',
+                                    children=[
+                                        html.Div(
+                                            children=[
+                                                dcc.Graph(
+                                                    id='graph-arousal-valence',
+                                                    style={'height': '68vh'},
+                                                ),
+                                            ],
+                                            className='eight columns',
+                                        ),
+                                        html.Div(
+                                            children=[
+                                                html.Div(
+                                                    children=[
+                                                        'Select AV representation:',
+                                                        dcc.Dropdown(
+                                                            style={
+                                                                "margin": "0px 5px 5px 0px"
+                                                            },
+                                                            id='dropdown-arousalvalence',
+                                                            placeholder='Select AV representation:',
+                                                            searchable=False,
+                                                            clearable=False,
+                                                            options=[
+                                                                {
+                                                                    'label': 'Spotify API',
+                                                                    'value': 'spoti_api',
+                                                                },
+                                                                {
+                                                                    'label': 'Spotify  API + Standarization',
+                                                                    'value': 'norm',
+                                                                },
+                                                            ],
+                                                            value='spoti_api',
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    children=[
+                                                        'Colorize using features:',
+                                                        dcc.Dropdown(
+                                                            style={
+                                                                "margin": "0px 5px 5px 0px"
+                                                            },
+                                                            id='dropdown-color',
+                                                            placeholder='Colorize using Spotify API:',
+                                                            searchable=False,
+                                                            clearable=False,
+                                                            options=[
+                                                                {
+                                                                    'label': 'None',
+                                                                    'value': 'none',
+                                                                },
+                                                                {
+                                                                    'label': 'Danceability',
+                                                                    'value': 'danceability',
+                                                                },
+                                                                {
+                                                                    'label': 'Popularity',
+                                                                    'value': 'popularity',
+                                                                },
+                                                                {
+                                                                    'label': 'Tempo',
+                                                                    'value': 'tempo',
+                                                                },
+                                                                {
+                                                                    'label': 'Loudness',
+                                                                    'value': 'loudness',
+                                                                },
+                                                                {
+                                                                    'label': 'Acousticness',
+                                                                    'value': 'acousticness',
+                                                                },
+                                                                {
+                                                                    'label': 'Speechiness',
+                                                                    'value': 'speechiness',
+                                                                },
+                                                                {
+                                                                    'label': 'Liveness',
+                                                                    'value': 'liveness',
+                                                                },
+                                                            ],
+                                                            value='none',
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    children=[
+                                                        'Select filters:',
+                                                        dcc.Dropdown(
+                                                            style={
+                                                                "margin": "0px 5px 5px 0px"
+                                                            },
+                                                            id='dropdown-filters',
+                                                            placeholder='Select filters:',
+                                                            searchable=False,
+                                                            clearable=False,
+                                                            options=[
+                                                                {
+                                                                    'label': 'None',
+                                                                    'value': 'none',
+                                                                },
+                                                                {
+                                                                    'label': 'Positive Preference',
+                                                                    'value': 'pos_pref',
+                                                                },
+                                                                {
+                                                                    'label': 'Negative Preference',
+                                                                    'value': 'neg_pref',
+                                                                },
+                                                                {
+                                                                    'label': 'Positive Familiarity',
+                                                                    'value': 'pos_fam',
+                                                                },
+                                                                {
+                                                                    'label': 'Negative Familiarity',
+                                                                    'value': 'neg_fam',
+                                                                },
+                                                                {
+                                                                    'label': 'Danceability (>0.35)',
+                                                                    'value': 'pos_dan',
+                                                                },
+                                                                {
+                                                                    'label': 'Danceability (<0.35)',
+                                                                    'value': 'neg_dan',
+                                                                },
+                                                                {
+                                                                    'label': 'Acousticness (>0.98)',
+                                                                    'value': 'pos_aco',
+                                                                },
+                                                                {
+                                                                    'label': 'Acousticness (<0.98)',
+                                                                    'value': 'neg_aco',
+                                                                },
+                                                                {
+                                                                    'label': 'Popularity (>0.1)',
+                                                                    'value': 'pos_pop',
+                                                                },
+                                                                {
+                                                                    'label': 'Popularity (<0.1)',
+                                                                    'value': 'neg_pop',
+                                                                },
+                                                            ],
+                                                            value='none',
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    style={
+                                                        "margin": "0px 5px 5px 0px"
+                                                    },
+                                                    children=[
+                                                        "Mode",
+                                                        dcc.Slider(
+                                                            id="slider-mode",
+                                                            min=-1,
+                                                            max=1,
+                                                            step=None,
+                                                            value=-1,
+                                                            marks={
+                                                                -1: 'All',
+                                                                0: 'Minor',
+                                                                1: 'Major',
+                                                            },
+                                                            vertical=False,
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    style={
+                                                        "margin": "0px 5px 5px 0px"
+                                                    },
+                                                    children=[
+                                                        "Tempo",
+                                                        dcc.RangeSlider(
+                                                            id="slider-tempo",
+                                                            min=0,
+                                                            max=220,
+                                                            step=1,
+                                                            value=[0, 220],
+                                                            tooltip={
+                                                                "placement": "bottom",
+                                                                "always_visible": True,
+                                                            },
+                                                            allowCross=False,
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    style={
+                                                        "margin": "0px 5px 5px 0px"
+                                                    },
+                                                    children=[
+                                                        "Key",
+                                                        dcc.Slider(
+                                                            id="slider-key",
+                                                            min=0,
+                                                            max=15,
+                                                            step=None,
+                                                            value=15,
+                                                            marks={
+                                                                0: 'C',
+                                                                1: 'C#',
+                                                                2: 'D',
+                                                                3: 'D#',
+                                                                4: 'E',
+                                                                5: 'F',
+                                                                6: 'F#',
+                                                                7: 'G',
+                                                                8: 'G#',
+                                                                9: 'A',
+                                                                10: 'A#',
+                                                                11: 'B',
+                                                                15: 'All',
+                                                            },
+                                                            vertical=False,
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    style={
+                                                        "margin": "0px 5px 5px 0px"
+                                                    },
+                                                    children=[
+                                                        "Num. Annotators",
+                                                        dcc.RangeSlider(
+                                                            id="slider-users",
+                                                            min=0,
+                                                            max=np.max(
+                                                                self.data.num_users
+                                                            ),
+                                                            step=1,
+                                                            value=[
+                                                                0,
+                                                                np.max(
+                                                                    self.data.num_users
+                                                                ),
+                                                            ],
+                                                            tooltip={
+                                                                "placement": "bottom",
+                                                                "always_visible": True,
+                                                            },
+                                                            vertical=False,
+                                                        ),
+                                                    ],
+                                                ),
+                                                html.Div(
+                                                    id='agreement-text',
+                                                    children=[],
+                                                ),
+                                            ],
+                                            className='four columns',
+                                        ),
+                                    ],
+                                ),
+                            ],
+                            className='six columns',
+                        ),
+                        # annotation info
+                        html.Div(
+                            [
+                                html.Table(
+                                    id="table-element",
+                                    className="table__container",
+                                )
+                            ],
+                            id="click-information",
+                            className='six columns',
+                        ),
+                    ],
+                ),
+                # footer
+                html.Div(
+                    className="row footer",
+                    style={"background-color": "#f9f9f9"},
+                    children=[
+                        html.P(
+                            'Created by Juan Sebastián Gómez-Cañón',
+                            style={
+                                'text-align': 'center',
+                                'color': 'grey',
+                                'font-size': '10px',
+                            },
+                        ),
+                        html.Div(
+                            children=[
+                                html.A(
+                                    html.Img(
+                                        src=app.get_asset_url('juan_gomez.png'),
+                                        alt='juan_logo',
+                                        height=25,
+                                    ),
+                                    href='https://juansgomez87.github.io/',
+                                    target='_blank',
+                                    style={"margin": "0px 15px 0px 15px"},
+                                ),
+                                html.A(
+                                    html.Img(
+                                        src=app.get_asset_url('twitter.png'),
+                                        alt='twitter',
+                                        height=25,
+                                    ),
+                                    href='https://twitter.com/juan_s_gomez',
+                                    target='_blank',
+                                    style={"margin": "0px 15px 0px 15px"},
+                                ),
+                                html.A(
+                                    html.Img(
+                                        src=app.get_asset_url('github.png'),
+                                        alt='github',
+                                        height=25,
+                                    ),
+                                    href='https://github.com/juansgomez87',
+                                    target='_blank',
+                                    style={"margin": "0px 15px 0px 15px"},
+                                ),
+                                html.A(
+                                    html.Img(
+                                        src=app.get_asset_url('scholar.png'),
+                                        alt='scholar',
+                                        height=25,
+                                    ),
+                                    href='https://scholar.google.com/citations?user=IvIQqUwAAAAJ&hl=en',
+                                    target='_blank',
+                                    style={"margin": "0px 15px 0px 15px"},
+                                ),
+                            ],
+                            style={'text-align': 'center'},
+                        ),
+                    ],
+                ),
+            ],
+        )
 
 
 
     def run_callbacks(self, app):
         @app.callback(
-            [Output("graph-arousal-valence", "figure"),
-            Output('agreement-text', 'children')],
-            [
-                Input("dropdown-arousalvalence", "value"),
-                Input("dropdown-color", "value"),
-                Input("slider-mode", "value"),
-                Input("slider-key", "value"),
-                Input("slider-tempo", "value"),
-                Input("slider-users", "value"),
-                Input('dropdown-filters', 'value')
-            ],
-        )
+                [Output("graph-arousal-valence", "figure"),
+                Output('agreement-text', 'children')],
+                [
+                    Input("dropdown-arousalvalence", "value"),
+                    Input("dropdown-color", "value"),
+                    Input("slider-mode", "value"),
+                    Input("slider-key", "value"),
+                    Input("slider-tempo", "value"),
+                    Input("slider-users", "value"),
+                    Input('dropdown-filters', 'value')
+                ],
+            )
         def display_plot(av_rep, spoti_filt, sl_mode, sl_key, sl_tempo, sl_users, oth_filt):
             this_df = self.data
 
@@ -470,7 +642,11 @@ class Plotter():
                     this_anno = this_anno[this_anno.favSong == '0'].reset_index()
                 this_songs_filt = this_anno.externalID.unique().tolist()
                 this_df = this_df[this_df.cdr_track_num.isin(this_songs_filt)].reset_index()
-            elif oth_filt != 'none' and not (oth_filt.endswith('_pref') or (oth_filt.endswith('_fam'))):
+            elif (
+                oth_filt != 'none'
+                and not oth_filt.endswith('_pref')
+                and not (oth_filt.endswith('_fam'))
+            ):
                 if self.filters[oth_filt]['operation'] == '>':
                     this_df = this_df[this_df[self.filters[oth_filt]['column']] >= self.filters[oth_filt]['value']].reset_index()
                 elif self.filters[oth_filt]['operation'] == '<':
@@ -499,7 +675,7 @@ class Plotter():
                 legend=dict(x=-.1, y=1.2, orientation="h"),
             )
 
-            
+
             data = []
             for sel, group in this_df.groupby('selection'):
                 scatter = go.Scattergl(
