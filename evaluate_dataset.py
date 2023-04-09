@@ -45,14 +45,16 @@ class Evaluator():
         self.queries = n_queries
         self.dataset = pd.read_csv(dataset_fn, sep=';')
         self.path_to_models = './models/pretrained/'
-        self.path_models_users = './models/users/users_q{}_e{}_bal_entr/'.format(n_queries, epochs)
+        self.path_models_users = (
+            f'./models/users/users_q{n_queries}_e{epochs}_bal_entr/'
+        )
         self.epochs = epochs
         data = self.load_json(dataset_anno)
         anno = pd.DataFrame(data['annotations'])
         users = pd.DataFrame(data['users'])
         anno['quadrant'] = list(map(self.aro_val_to_quads, anno['arousalValue'].tolist(), anno['valenceValue'].tolist()))
 
-        all_users = [_ for _ in anno.userId.unique().tolist()]
+        all_users = list(anno.userId.unique().tolist())
         self.user_anno_dict = {_: anno.externalID[anno.userId == _].tolist() for _ in all_users}
         self.all_users = [k for k,v in self.user_anno_dict.items() if len(v) >= num_anno]
         self.anno = anno[anno.userId.isin(self.all_users)]
@@ -106,12 +108,11 @@ class Evaluator():
         except FileExistsError:
             if os.path.exists(os.path.join(self.path_models_users, str(u_id), 'f1.csv')):
                 print('User has already been evaluated, jumping to next!')
-                pass
             else:
                 print('User has already created but not evaluated, deleting!')
                 subprocess.run(['rm', '-rf', user_path])
                 os.makedirs(user_path)
-            
+
         pre_models = self.mod_list
         cp_models = [f.replace(self.path_to_models, user_path) for f in self.mod_list]
 
@@ -154,7 +155,7 @@ class Evaluator():
 
             #############################
             # test initial performance before re-trainining
-            for i, mod_fn in enumerate(self.mod_list):
+            for mod_fn in self.mod_list:
                 mod = joblib.load(mod_fn)
                 # test using testing data
                 this_mod_pred = mod.predict(X_test_np.values)
@@ -164,7 +165,7 @@ class Evaluator():
             for mode in self.all_modes:
                 #############################
                 # create each user
-                print('Training mode {} for user {}!'.format(mode, u_id))
+                print(f'Training mode {mode} for user {u_id}!')
                 this_models = self.create_user(u_id, mode)
                 f1_scores[mode] = {}
                 this_X_train = X_train.copy(deep=True)
@@ -209,7 +210,7 @@ class Evaluator():
                     elif mode == 'mc':
                         # machine consensus (MC)
                         pred_prob = []
-                        for i, mod_fn in enumerate(this_models):
+                        for mod_fn in this_models:
                             mod = joblib.load(mod_fn)
                             y_probs = mod.predict_proba(this_X_train_np)
                             # summarize with mean across all samples
@@ -249,7 +250,7 @@ class Evaluator():
                     elif mode == 'mix':
                         # hybrid consensus (HC)
                         pred_prob = []
-                        for i, mod_fn in enumerate(this_models):
+                        for mod_fn in this_models:
                             mod = joblib.load(mod_fn)
                             y_probs = mod.predict_proba(this_X_train_np)
                             # summarize with mean across all samples
@@ -321,7 +322,7 @@ class Evaluator():
 
                     #############################
                     # evaluate models and save f-scores
-                    for i, mod_fn in enumerate(this_models):
+                    for mod_fn in this_models:
                         mod = joblib.load(mod_fn)
                         # test using testing data
                         this_mod_pred = mod.predict(X_test_np.values)
@@ -333,7 +334,7 @@ class Evaluator():
                     this_X_train = this_X_train[~this_X_train.s_id.isin(q_songs)]
                     this_X_train_np = this_X_train_np[~this_X_train_np.index.isin(q_songs)]
                     this_y_train = this_y_train[~this_y_train.index.isin(q_songs)]
-                    # print(this_X_train.shape)
+                                # print(this_X_train.shape)
 
                 # clean memory
                 del this_X_train
@@ -391,15 +392,14 @@ if __name__ == "__main__":
         sys.exit()
 
 
-    if args.balanced:
-        if args.queries % 4 != 0:
-            print('If you want to balance the entropy calculator, select number of queries as multiple of classes (i.e., 4 or 8)')
+    if args.balanced and args.queries % 4 != 0:
+        print('If you want to balance the entropy calculator, select number of queries as multiple of classes (i.e., 4 or 8)')
 
     evaluator = Evaluator(args.num_anno, args.epochs, args.queries, args.balanced)
 
     evaluator.run()
 
 
-    print('Process lasted {} minutes!'.format((time.time()-start) / 60))
+    print(f'Process lasted {(time.time() - start) / 60} minutes!')
 
 
